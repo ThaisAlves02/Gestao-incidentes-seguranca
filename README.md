@@ -1,1 +1,5 @@
-# Sistema_de_monitoramento_seguranca
+# Sistema_de_monitoramento_seguranca 
+O sistema monitora incidentes de segurança, como:
+- e-mail com Phishing
+- programas com malware
+- 
