@@ -17,10 +17,52 @@ def verClientes():
 
     print("CÓDIGO | NOME | CPF | EMAIL | TELEFONE")
     for cod, nome, cpf, email, telefone in clientes:
-        print(f"{cod} | {nome} | {email} | {telefone}")
+        print(f"{cod} | {nome} | {cpf} | {email} | {telefone}")
 
+def escolherCliente():
+    verClientes()
 
+    cod_escolhido = int(input("Digite o código do cliente desejado: "))
 
+    consulta = banco.consultar('''
+        SELECT cod_cliente, nome_cliente, cpf_cliente, email_cliente, telefone_cliente
+        FROM clientes
+        WHERE cod_cliente = %s;
+    ''', (cod_escolhido,))
+
+    if (len(consulta) == 0):
+        print("cliente não encontrado!")
+        return None
+
+    cliente = consulta[0]
+
+    print(f'''
+    Ficha do cliente:
+
+    Código: {cliente[0]}
+    Nome: {cliente[1]}
+    CPF: {cliente[2]} minutos
+    Email: {cliente[3]}
+    Telefone: {cliente[3]}
+    ''')
+
+    return cliente
+
+def cadastrarCliente():
+    print("CADASTRO DE NOVO CLIENTE")
+
+    nome = input("Digite o título do : ")
+    cpf = int(input("Digite a duração (minutos): "))
+    classificacao = input("Digite a classificação (L, 10, 12, 14, 16 ou 18): ")
+
+    try:
+        banco.manipular('''
+            INSERT INTO s
+            VALUES (default, %s, %s, %s);
+        ''', (titulo, duracao, classificacao))
+        print(" CADASTRADO COM SUCESSO!")
+    except Exception as error:
+        print("ERRO AO CADASTRAR ")
 
 
 while (True):
