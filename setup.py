@@ -106,7 +106,7 @@ try:
         INSERT INTO ocorrencia (titulo, descricao, solucao, data_registro, tipo_incidente, gravidade, status, cod_cliente, cod_analista) VALUES
         ('Lentidão no sistema de vendas', 'Sistema apresenta demora excessiva ao finalizar pedidos no caixa.', NULL, '2026-11-20', 'Performance', 'média', 'aberto', %s, %s),
         ('Erro de autenticação no portal', 'Cliente recebe erro 500 ao tentar redefinir a senha de acesso.', NULL, '2026-11-22', 'Acesso', 'baixa', 'em investigação', %s, %s),
-        ('Queda total do servidor de banco de dados', 'Banco principal ficou inacessível impedindo todas as operações.', 'Reiniciado o serviço do PostgreSQL e otimizado o pool de conexões.', '2026-11-24', 'Infraestrutura', 'crítica', 'resolvido', %s, %s)
+        ('Queda total do servidor de banco de dados', 'Banco principal ficou inacessível impedindo todas as operações.', 'Reiniciado o serviço do PostgreSQL e otimizado o pool de conexões.', '2026-11-24', 'Infraestrutura', 'crítica', 'em investigação', %s, %s)
         RETURNING cod_ocorrencia;
     """, (
         cod_clientes[0], cod_analistas[0],
