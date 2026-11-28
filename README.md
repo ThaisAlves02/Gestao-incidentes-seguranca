@@ -1,4 +1,4 @@
-# Briefing — Gestão de Incidentes de Segurança
+# Gestão de Incidentes de Segurança
 
 ## 1. O cenário
 
