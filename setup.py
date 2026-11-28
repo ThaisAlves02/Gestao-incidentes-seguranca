@@ -1,3 +1,4 @@
+
 import os
 import psycopg
 from dotenv import load_dotenv
@@ -14,7 +15,7 @@ try:
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
-        sslmode=os.getenv("DB_SSLMODE"),
+        sslmode=os.getenv("DB_SSL"),
     )
     cursor = conexao.cursor()
 
@@ -22,29 +23,36 @@ try:
     linha = cursor.fetchone()
     print("Conectado! Resposta do banco:", linha)
 
+    # 1. Remover tabelas existentes
     cursor.execute("DROP TABLE IF EXISTS historico")
     cursor.execute("DROP TABLE IF EXISTS ocorrencia")
     cursor.execute("DROP TABLE IF EXISTS analista")
     cursor.execute("DROP TABLE IF EXISTS clientes")
 
+    # 2. Criar tabela clientes
     cursor.execute("""
         CREATE TABLE clientes (
             cod_cliente integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             nome_cliente varchar(150) NOT NULL,
-            cpf_cliente char(11) NOT NULL UNIQUE,
-            email_cliente varchar(254) NOT NULL UNIQUE,
-            telefone_cliente char(11) NOT NULL
+            cpf_cliente char(11) NOT NULL,
+            email_cliente varchar(254) NOT NULL,
+            telefone_cliente char(11) NOT NULL,
+            CONSTRAINT uni_clientes_cpf UNIQUE (cpf_cliente),
+            CONSTRAINT uni_clientes_email UNIQUE (email_cliente)
         )
     """)
 
+    # 3. Criar tabela analista
     cursor.execute("""
         CREATE TABLE analista (
             cod_analista integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             nome_analista varchar(150) NOT NULL,
-            email_analista varchar(254) NOT NULL UNIQUE
+            email_analista varchar(254) NOT NULL,
+            CONSTRAINT uni_analista_email UNIQUE (email_analista)
         )
     """)
 
+    # 4. Criar tabela ocorrencia
     cursor.execute("""
         CREATE TABLE ocorrencia (
             cod_ocorrencia integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -65,6 +73,7 @@ try:
         )
     """)
 
+    # 5. Criar tabela historico
     cursor.execute("""
         CREATE TABLE historico (
             cod_historico integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -79,61 +88,103 @@ try:
             CONSTRAINT fk_historico_analista FOREIGN KEY (cod_analista_alter) REFERENCES analista (cod_analista)
         )
     """)
+
     print("Tabelas criadas.")
 
-    # 1. Tabela clientes
+    # 6. Inserir dados na tabela clientes
     cursor.execute("""
-        INSERT INTO clientes (nome_cliente, cpf_cliente, email_cliente, telefone_cliente) VALUES
+        INSERT INTO clientes
+        (nome_cliente, cpf_cliente, email_cliente, telefone_cliente)
+        VALUES
         ('Mariana Silva', '12345678901', 'mariana.silva@email.com', '85999887766'),
         ('Carlos Eduardo Santos', '23456789012', 'carlos.santos@email.com', '85988776655'),
-        ('Fernanda Oliveira', '34567890123', 'fernanda.oliveira@email.com', '85977665544')
+        ('Fernanda Oliveira', '34567890123', 'fernanda.oliveira@email.com', '85977665544'),
+        ('Pedro Henrique Lima', '45678901234', 'pedro.lima@email.com', '85966554433'),
+        ('Beatriz Martins Souza', '56789012345', 'beatriz.souza@email.com', '85955443322')
         RETURNING cod_cliente;
     """)
     cod_clientes = [row[0] for row in cursor.fetchall()]
 
-    # 2. Tabela analista
+    # 7. Inserir dados na tabela analista
     cursor.execute("""
-        INSERT INTO analista (nome_analista, email_analista) VALUES
+        INSERT INTO analista
+        (nome_analista, email_analista)
+        VALUES
         ('Lucas Ferreira', 'lucas.ferreira@empresa.com'),
         ('Juliana Costa', 'juliana.costa@empresa.com'),
-        ('Rafael Almeida', 'rafael.almeida@empresa.com')
+        ('Rafael Almeida', 'rafael.almeida@empresa.com'),
+        ('Camila Rodrigues', 'camila.rodrigues@empresa.com'),
+        ('André Martins', 'andre.martins@empresa.com')
         RETURNING cod_analista;
     """)
     cod_analistas = [row[0] for row in cursor.fetchall()]
 
-    # 3. Tabela ocorrencia
+    # 8. Inserir dados na tabela ocorrencia
     cursor.execute("""
-        INSERT INTO ocorrencia (titulo, descricao, solucao, data_registro, tipo_incidente, gravidade, status, cod_cliente, cod_analista) VALUES
-        ('Lentidão no sistema de vendas', 'Sistema apresenta demora excessiva ao finalizar pedidos no caixa.', NULL, '2026-11-20', 'Performance', 'média', 'aberto', %s, %s),
+        INSERT INTO ocorrencia
+        (titulo, descricao, solucao, data_registro, tipo_incidente, gravidade, status, cod_cliente, cod_analista)
+        VALUES
+        ('Lentidão no sistema de vendas', 'Sistema apresenta demora excessiva ao finalizar pedidos no caixa.', NULL, '2026-11-20', 'Performance', 'média', 'em investigação', %s, %s),
+
         ('Erro de autenticação no portal', 'Cliente recebe erro 500 ao tentar redefinir a senha de acesso.', NULL, '2026-11-22', 'Acesso', 'baixa', 'em investigação', %s, %s),
-        ('Queda total do servidor de banco de dados', 'Banco principal ficou inacessível impedindo todas as operações.', 'Reiniciado o serviço do PostgreSQL e otimizado o pool de conexões.', '2026-11-24', 'Infraestrutura', 'crítica', 'em investigação', %s, %s)
+
+        ('Queda total do servidor de banco de dados', 'Banco principal ficou inacessível impedindo todas as operações.', 'Reiniciado o serviço do PostgreSQL e otimizado o pool de conexões.', '2026-11-24', 'Infraestrutura', 'crítica', 'em investigação', %s, %s),
+
+        ('Tentativa de acesso não autorizado', 'Foram identificadas tentativas repetidas de acesso à conta de um cliente.', NULL, '2026-11-26', 'Segurança', 'crítica', 'em investigação', %s, %s),
+
+        ('Falha no envio de notificações', 'O sistema deixou de enviar notificações automáticas aos clientes.', NULL, '2026-11-27', 'Sistema', 'média', 'em investigação', %s, %s)
+
         RETURNING cod_ocorrencia;
     """, (
         cod_clientes[0], cod_analistas[0],
         cod_clientes[1], cod_analistas[1],
-        cod_clientes[2], cod_analistas[2]
+        cod_clientes[2], cod_analistas[2],
+        cod_clientes[3], cod_analistas[3],
+        cod_clientes[4], cod_analistas[3]
     ))
+
     cod_ocorrencias = [row[0] for row in cursor.fetchall()]
 
-    # 4. Tabela historico
+    # 9. Inserir dados na tabela historico
     cursor.execute("""
-        INSERT INTO historico (cod_ocorrencia, campo_alter, valor_antigo, valor_novo, data_alter, hora_alter, cod_analista_alter) VALUES
-        (%s, 'status', 'aberto', 'em investigação', '2026-11-23', '10:15:00', %s),
-        (%s, 'status', 'em investigação', 'resolvido', '2026-11-25', '14:30:00', %s),
-        (%s, 'solucao', NULL, 'Reiniciado o serviço do PostgreSQL e otimizado o pool de conexões.', '2026-11-25', '14:30:00', %s);
+        INSERT INTO historico
+        (cod_ocorrencia, campo_alter, valor_antigo, valor_novo,
+         data_alter, hora_alter, cod_analista_alter)
+        VALUES
+        (%s, 'status', 'aberto', 'em investigação',
+         '2026-11-21', '09:00:00', %s),
+
+        (%s, 'status', 'aberto', 'em investigação',
+         '2026-11-23', '10:15:00', %s),
+
+        (%s, 'status', 'aberto', 'em investigação',
+         '2026-11-26', '09:30:00', %s),
+
+        (%s, 'gravidade', 'baixa', 'média',
+         '2026-11-27', '10:45:00', %s),
+
+        (%s, 'cod_analista', %s, %s,
+         '2026-11-27', '11:20:00', %s);
     """, (
+        cod_ocorrencias[0], cod_analistas[0],
         cod_ocorrencias[1], cod_analistas[1],
-        cod_ocorrencias[2], cod_analistas[2],
-        cod_ocorrencias[2], cod_analistas[2]
+        cod_ocorrencias[3], cod_analistas[3],
+        cod_ocorrencias[4], cod_analistas[4],
+        cod_ocorrencias[4],
+        str(cod_analistas[4]),
+        str(cod_analistas[3]),
+        cod_analistas[4]
     ))
+
     print("Dados inseridos.")
 
     conexao.commit()
-    print("Banco Gestão de incidentes pronto.")
+    print("Banco Gestão de Incidentes pronto.")
 
 except Exception as error:
     if conexao is not None:
         conexao.rollback()
+
     print(f"O tipo do erro foi: {type(error).__name__}")
     print(f"Mensagem do erro: {error}")
 

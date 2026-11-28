@@ -1,7 +1,9 @@
+```python
 from classBanco import Banco
 from datetime import date, datetime
 
 banco = Banco()
+
 
 def verClientes():
     print("LISTA DE CLIENTES")
@@ -19,6 +21,7 @@ def verClientes():
     print("CÓDIGO | NOME | CPF | EMAIL | TELEFONE")
     for cod, nome, cpf, email, telefone in clientes:
         print(f"{cod} | {nome} | {cpf} | {email} | {telefone}")
+
 
 def escolherCliente():
     verClientes()
@@ -49,6 +52,7 @@ def escolherCliente():
 
     return cliente
 
+
 def cadastrarCliente():
     print("CADASTRO DE NOVO CLIENTE")
 
@@ -65,6 +69,7 @@ def cadastrarCliente():
         print(" CADASTRADO COM SUCESSO!")
     except Exception as error:
         print(f"ERRO AO CADASTRAR. O erro foi: {error}.")
+
 
 def alterarCliente():
     print("ATUALIZAÇÃO DE CLIENTE")
@@ -100,7 +105,6 @@ def alterarCliente():
     novo_telefone = input(f"Digite o novo telefone ({telefone}): ").strip()
     if (novo_telefone):
         telefone = novo_telefone
-    
 
     try:
         banco.manipular('''
@@ -114,6 +118,7 @@ def alterarCliente():
         print("CLIENTE ATUALIZADO!")
     except Exception as error:
         print(f"Ocorreu um erro na atualização! O erro foi: {error}")
+
 
 def removerCliente():
     print("REMOÇÃO DE CLIENTE")
@@ -144,17 +149,19 @@ def verAnalista():
     print("LISTA DE ANALISTAS")
 
     analista = banco.consultar('''
-        SELECT cod_analista nome_analista email_analista FROM analista
+        SELECT cod_analista, nome_analista, email_analista
+        FROM analista
         ORDER BY cod_analista
     ''')
 
     if (len(analista) == 0):
-        print("NÃO HÁ analista CADASTRADOS")
+        print("NÃO HÁ ANALISTAS CADASTRADOS")
         return
 
-    print("CÓDIGO | NOME | CPF | EMAIL | TELEFONE")
+    print("CÓDIGO | NOME | EMAIL")
     for cod, nome, email in analista:
         print(f"{cod} | {nome} | {email}")
+
 
 def escolherAnalista():
     verAnalista()
@@ -175,14 +182,15 @@ def escolherAnalista():
 
     print(f'''
         Ficha do analista:
-    
+
         Código: {analista[0]}
         Nome: {analista[1]}
         Email: {analista[2]}
         ''')
-    
+
     return analista
-    
+
+
 def cadastrarAnalista():
     print("CADASTRO DE NOVO analista")
 
@@ -197,6 +205,7 @@ def cadastrarAnalista():
         print(" CADASTRADO COM SUCESSO!")
     except Exception as error:
         print(f"ERRO AO CADASTRAR. O erro foi: {error}.")
+
 
 def alterarAnalista():
     print("ATUALIZAÇÃO DE analista")
@@ -224,40 +233,43 @@ def alterarAnalista():
     novo_email = input(f"Digite o novo email ({email}): ").strip()
     if (novo_email):
         email = novo_email
-    
-        try:
-            banco.manipular('''
-                UPDATE analista
-                SET nome_analista = %s,
-                    email_analista = %s,
-                WHERE cod_analista = %s;
-            ''', (nome, email, cod))
-            print("analista ATUALIZADO!")
-        except Exception as error:
-            print(f"Ocorreu um erro na atualização! O erro foi: {error}")
-    
+
+    try:
+        banco.manipular('''
+            UPDATE analista
+            SET nome_analista = %s,
+                email_analista = %s
+            WHERE cod_analista = %s;
+        ''', (nome, email, cod))
+        print("analista ATUALIZADO!")
+    except Exception as error:
+        print(f"Ocorreu um erro na atualização! O erro foi: {error}")
+
+
 def removerAnalista():
-        print("REMOÇÃO DE analista")
-    
-        analista = escolherAnalista()
-    
-        if (not analista):
-            print("analista não encontrado!")
-            return
-    
-        continuar = input("DESEJA REALMENTE APAGAR ESSE analista? (S/N) ")
-    
-        if (continuar != "S"):
-            print("Cancelando operação...")
-            return
-        try:
-               banco.manipular('''
-                   DELETE FROM analista
-                   WHERE cod_analista = %s;
-               ''', (analista[0],))
-               print("analista removido com sucesso!")
-        except Exception as error:
-               print(f"Não foi possível remover o analista! O erro foi: {error}")
+    print("REMOÇÃO DE analista")
+
+    analista = escolherAnalista()
+
+    if (not analista):
+        print("analista não encontrado!")
+        return
+
+    continuar = input("DESEJA REALMENTE APAGAR ESSE analista? (S/N) ")
+
+    if (continuar != "S"):
+        print("Cancelando operação...")
+        return
+
+    try:
+        banco.manipular('''
+            DELETE FROM analista
+            WHERE cod_analista = %s;
+        ''', (analista[0],))
+        print("analista removido com sucesso!")
+    except Exception as error:
+        print(f"Não foi possível remover o analista! O erro foi: {error}")
+
 
 def verOcorrencias():
     print("LISTA DE OCORRÊNCIAS")
@@ -267,8 +279,10 @@ def verOcorrencias():
                o.gravidade, o.status, c.nome_cliente,
                a.nome_analista
         FROM ocorrencia o
-        INNER JOIN clientes c ON o.cod_cliente = c.cod_cliente
-        INNER JOIN analista a ON o.cod_analista = a.cod_analista
+        JOIN clientes c
+        ON c.cod_cliente = o.cod_cliente
+        JOIN analista a
+        ON a.cod_analista = o.cod_analista
         ORDER BY o.cod_ocorrencia;
     ''')
 
@@ -313,7 +327,7 @@ def escolherOcorrencia():
     Gravidade: {ocorrencia[6]}
     Status: {ocorrencia[7]}
     Código do cliente: {ocorrencia[8]}
-    Código do analista: {ocorrencia[9]}
+    Código do analista: {ocorrencia[9]} #código do analista responsável pela ocorrência antes da alteração.
     ''')
 
     return ocorrencia
@@ -355,10 +369,19 @@ def cadastrarOcorrencia():
 def alterarOcorrencia():
     print("ATUALIZAÇÃO DE OCORRÊNCIA")
 
+    try:
+        cod_analista_logado = int(input("Informe seu código de analista: "))
+    except ValueError:
+        print("Código inválido. Digite apenas números.")
+        return
+
     ocorrencia = escolherOcorrencia()
 
-    if (not ocorrencia):
-        print("NÃO É POSSÍVEL ALTERAR A OCORRÊNCIA.")
+    if not ocorrencia:
+        return
+
+    if ocorrencia[9] != cod_analista_logado:
+        print("Você não é o responsável por esta ocorrência.")
         return
 
     continuar = input("Deseja alterar as informações da ocorrência? (S/N) ")
@@ -449,7 +472,7 @@ def alterarOcorrencia():
                     VALUES (default, %s, %s, %s, %s, %s, %s, %s);
                 ''', (
                     cod, campo, str(valor_antigo), str(valor_novo),
-                    data_alter, hora_alter, ocorrencia[9]
+                    data_alter, hora_alter, cod_analista_logado
                 ))
 
     except Exception as error:
@@ -481,6 +504,7 @@ def removerOcorrencia():
 
     except Exception as error:
         print(f"ERRO AO REMOVER OCORRÊNCIA: {error}")
+
 
 def consultarHistorico():
     print("CONSULTA DE HISTÓRICO")
@@ -517,35 +541,18 @@ def consultarHistorico():
         --------------------------------
         ''')
 
+
 while (True):
     print('''
-    ========================================
-       GESTÃO DE INCIDENTES DE SEGURANÇA
-    ========================================
+    GESTÃO DE INCIDENTES DE SEGURANÇA
 
-    CLIENTES
-    1. Ver clientes
-    2. Escolher cliente
-    3. Cadastrar cliente
-    4. Alterar cliente
-    5. Remover cliente
+    1. Ver Clientes          6. Ver Analistas          11. Ver Ocorrências
+    2. Escolher Cliente      7. Escolher Analista      12. Escolher Ocorrência
+    3. Cadastrar Cliente     8. Cadastrar Analista     13. Cadastrar Ocorrência
+    4. Alterar Cliente       9. Alterar Analista       14. Alterar Ocorrência
+    5. Remover Cliente      10. Remover Analista      15. Remover Ocorrência
 
-    ANALISTAS
-    6. Ver analistas
-    7. Escolher analista
-    8. Cadastrar analista
-    9. Alterar analista
-    10. Remover analista
-
-    OCORRÊNCIAS
-    11. Ver ocorrências
-    12. Escolher ocorrência
-    13. Registrar ocorrência
-    14. Alterar ocorrência
-    15. Remover ocorrência
-
-    HISTÓRICO
-    16. Consultar histórico
+    16. Consultar Histórico
 
     0. Sair
     ========================================
@@ -576,7 +583,7 @@ while (True):
     elif op == "11":
         verOcorrencias()
     elif op == "12":
-         escolherOcorrencia()
+        escolherOcorrencia()
     elif op == "13":
         cadastrarOcorrencia()
     elif op == "14":
